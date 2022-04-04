@@ -42,7 +42,7 @@ public extension URL {
     /// Gets the size from an video `URL`
     /// - Parameter url: The video `URL`
     /// - Returns: The size `CGSize`
-    public static func videoGetSize(url: URL) -> CGSize? {
+    func videoGetSize(url: URL) -> CGSize? {
         guard let track = AVURLAsset(url: url).tracks(withMediaType: AVMediaType.video).first else { return nil }
         let size = track.naturalSize.applying(track.preferredTransform)
         return CGSize(width: abs(size.width), height: abs(size.height))
