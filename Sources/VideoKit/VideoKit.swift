@@ -28,7 +28,7 @@ public class VideoKit {
             return callback(.error("ERROR INIT ASSET TRACK"))
         }
         
-        let trackOrientation = orientation(for: videoTrack)
+        let trackOrientation = videoTrack.orientation()
         let transformer = AVMutableVideoCompositionLayerInstruction(assetTrack: videoTrack)
         let videoComposition = AVMutableVideoComposition()
         
@@ -124,24 +124,6 @@ public class VideoKit {
         }
     }
     
-    /// Gets the ``VideoOrientation`` for an video (AVAssetTrack)
-    /// - Parameter track: The video (AVAssetTrack)
-    /// - Returns: ``VideoOrientation``
-    public static func orientation(for track: AVAssetTrack) -> VideoOrientation {
-        let t = track.preferredTransform
-        let size = track.naturalSize
-        
-        if t.tx == 0 && t.ty == size.width { // PortraitUpsideDown
-            return .down
-        } else if t.tx == 0 && t.ty == 0 { // LandscapeRight
-            return .right
-        } else if size.width == t.tx && size.height == t.ty { // LandscapeLeft
-            return .left
-        } else {
-            return .up
-        }
-    }
-    
     public static func getOutputPath(_ name: String) -> String {
         let documentPath = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true )[0] as NSString
         let outputPath = "\(documentPath)/\(name).mp4"
@@ -164,7 +146,11 @@ public extension VideoKit {
         var limitFPS: Int32?
         var limitBitrate: Int?
         
-        public init(_ quality: Quality = .preset1920x1080, limitLength: Double? = nil, cropRect: CGRect? = nil, limitFPS: Int32? = nil, limitBitrate: Int? = nil) {
+        public init(_ quality: Quality = .preset1920x1080,
+                    limitLength: Double? = nil,
+                    cropRect: CGRect? = nil,
+                    limitFPS: Int32? = nil,
+                    limitBitrate: Int? = nil) {
             self.quality = quality
             self.limitLength = limitLength
             self.cropRect = cropRect
@@ -173,7 +159,7 @@ public extension VideoKit {
         }
     }
     
-    enum VideoOrientation {
+    enum Orientation {
         case up, down, right, left
     }
     
