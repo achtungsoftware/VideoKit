@@ -28,6 +28,10 @@ public class VideoKit {
     var channelLayout = AudioChannelLayout()
     var assetReader: AVAssetReader?
     
+    private func close() {
+        
+    }
+    
     private func compress(_ asset: AVAsset, bitrate: Int, completion: @escaping (URL)->Void) {
         
         var audioFinished = false
@@ -100,15 +104,7 @@ public class VideoKit {
         let audioInputQueue = DispatchQueue(label: "audioQueue")
         
         do {
-            
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'Z'"
-            let date = Date()
-            let tempDir = NSTemporaryDirectory()
-            let outputPath = "\(tempDir)/\(formatter.string(from: date)).mp4"
-            let outputURL = URL(fileURLWithPath: outputPath)
-            
-            assetWriter = try AVAssetWriter(outputURL: outputURL, fileType: AVFileType.mp4)
+            assetWriter = try AVAssetWriter(outputURL: URL(fileURLWithPath: VideoKit.getOutputPath(UUID().uuidString)), fileType: AVFileType.mp4)
             
         } catch {
             assetWriter = nil
@@ -130,21 +126,18 @@ public class VideoKit {
         
         let closeWriter: () -> Void = {
             if audioFinished && videoFinished {
-                self.assetWriter?.finishWriting(completionHandler: { [weak self] in
-                    
-                    if let assetWriter = self?.assetWriter {
+                self.assetWriter.finishWriting {
+                    if let assetWriter = self.assetWriter {
                         do {
                             let data = try Data(contentsOf: assetWriter.outputURL)
                             print("compressFile -file size after compression: \(Double(data.count / 1048576)) mb")
                         } catch let err as NSError {
                             print("compressFile Error: \(err.localizedDescription)")
                         }
-                    }
-                    
-                    if let safeSelf = self, let assetWriter = safeSelf.assetWriter {
+                        
                         completion(assetWriter.outputURL)
                     }
-                })
+                }
                 
                 self.assetReader?.cancelReading()
             }
