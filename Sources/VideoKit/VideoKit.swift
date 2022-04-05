@@ -174,6 +174,10 @@ public extension VideoKit {
         case preset1280x720
         case preset1920x1080
         case preset3840x2160
+        case presetHEVC1920x1080
+        case presetLowQuality
+        case presetMediumQuality
+        case presetHighestQuality
         
         func get() -> String {
             switch self {
@@ -187,6 +191,14 @@ public extension VideoKit {
                 return AVAssetExportPreset1920x1080
             case .preset3840x2160:
                 return AVAssetExportPreset3840x2160
+            case .presetHEVC1920x1080:
+                return AVAssetExportPresetHEVC1920x1080
+            case .presetLowQuality:
+                return AVAssetExportPresetLowQuality
+            case .presetMediumQuality:
+                return AVAssetExportPresetMediumQuality
+            case .presetHighestQuality:
+                return AVAssetExportPresetHighestQuality
             }
         }
     }
