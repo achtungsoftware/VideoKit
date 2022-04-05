@@ -331,9 +331,6 @@ func compress(videoToCompress: URL, destinationPath: URL, size: CompressionSize?
                         audioDone = true
                     }
                 }
-                
-                // Let background thread rest for a while
-                Thread.sleep(forTimeInterval: 0.001)
             }
             
             // Write everything to output file
