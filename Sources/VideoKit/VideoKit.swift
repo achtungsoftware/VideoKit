@@ -17,28 +17,11 @@
 
 import Foundation
 import AVKit
-import FYVideoCompressor
 
 public class VideoKit {
     
     public static func mutate(videoUrl: URL, config: Config = Config(), callback: @escaping ( _ result: Result ) -> ()) {
-        let asset = AVURLAsset(url: videoUrl, options: nil)
         
-        guard let videoTrack = asset.tracks(withMediaType: .video).first else {
-            return callback(.error("ERROR INIT ASSET TRACK"))
-        }
-        
-        FYVideoCompressor.shared.compressVideo(videoUrl, quality: .custom(fps: Float(config.limitFPS ?? 30), bitrate: config.limitBitrate ?? Int(videoTrack.estimatedDataRate), scale: config.quality.get())) { result in
-            switch result {
-            case .success(let compressedVideoURL):
-                proc(videoUrl: compressedVideoURL, config: config, callback: callback)
-            case .failure(let error):
-                callback(.error(error.localizedDescription))
-            }
-        }
-    }
-    
-    private static func proc(videoUrl: URL, config: Config = Config(), callback: @escaping ( _ result: Result ) -> ()) {
         let asset = AVURLAsset(url: videoUrl, options: nil)
         
         guard let videoTrack = asset.tracks(withMediaType: .video).first else {
@@ -108,7 +91,7 @@ public class VideoKit {
         videoComposition.instructions = [instruction]
         
         let outputVideoUrl = URL(fileURLWithPath: getOutputPath(UUID().uuidString))
-        let exporter = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetHighestQuality) // ????
+        let exporter = AVAssetExportSession(asset: asset, presetName: config.quality.get())
         
         if let exporter = exporter {
             exporter.videoComposition = videoComposition
@@ -192,18 +175,18 @@ public extension VideoKit {
         case preset1920x1080
         case preset3840x2160
         
-        func get() -> CGSize {
+        func get() -> String {
             switch self {
             case .preset640x480:
-                return CGSize(width: 640, height: 480)
+                return AVAssetExportPreset640x480
             case .preset960x540:
-                return CGSize(width: 960, height: 540)
+                return AVAssetExportPreset960x540
             case .preset1280x720:
-                return CGSize(width: 1280, height: 720)
+                return AVAssetExportPreset1280x720
             case .preset1920x1080:
-                return CGSize(width: 1920, height: 1080)
+                return AVAssetExportPreset1920x1080
             case .preset3840x2160:
-                return CGSize(width: 3840, height: 2160)
+                return AVAssetExportPreset3840x2160
             }
         }
     }
