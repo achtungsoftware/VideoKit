@@ -1,5 +1,7 @@
 # VideoKit
 
+VideoKit is a high level layer on top of AVKit
+
 How it works
 ```swift
 
@@ -9,6 +11,8 @@ let config = VideoKit.Config(.preset1920x1080, limitLength: 180, limitFPS: 30, l
 VideoKit.mutate(videoUrl: YOUR_VIDEO_URL, config: config) { result in
   switch result {
     case .success(let videoUrl):
+      // DO SOMETHING WITH YOUR VIDEO
+      break
     case .error(let errorString):
       print(errorString)
   }
