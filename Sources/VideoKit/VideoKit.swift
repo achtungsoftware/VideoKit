@@ -19,19 +19,34 @@ import AVKit
 
 public class VideoKit {
     
-    var assetWriter: AVAssetWriter!
-    var assetWriterVideoInput: AVAssetWriterInput!
-    var audioMicInput: AVAssetWriterInput!
-    var videoURL: URL!
-    var audioAppInput: AVAssetWriterInput!
-    var channelLayout = AudioChannelLayout()
+    var assetWriter: AVAssetWriter?
     var assetReader: AVAssetReader?
     
-    private func close() {
+    public static func mutate(videoUrl: URL, config: Config = Config(), callback: @escaping ( _ result: Result ) -> ()) {
         
+        let asset = AVURLAsset(url: videoUrl, options: nil)
+        
+        guard let videoTrack = asset.tracks(withMediaType: .video).first else {
+            return callback(.error("ERROR INIT ASSET TRACK"))
+        }
+        
+        let bitrate = config.limitBitrate != nil ? videoTrack.estimatedDataRate > Float(config.limitBitrate!) ? Int(config.limitBitrate!) : Int(videoTrack.estimatedDataRate) : Int(videoTrack.estimatedDataRate)
+        
+        let instance = VideoKit()
+        
+        exportWithConfiguration(videoUrl: videoUrl, config: config) { result in
+            switch result {
+            case .success(let newVideoUrl):
+                instance.compress(newVideoUrl, bitrate: bitrate, config: config) { newUrl in
+                    callback(.success(newUrl))
+                }
+            case .error(let errorString):
+                callback(.error(errorString))
+            }
+        }
     }
     
-    private func compress(_ videoUrl: URL, bitrate: Int, completion: @escaping (URL)->Void) {
+    private func compress(_ videoUrl: URL, bitrate: Int, config: Config, completion: @escaping (URL) -> Void) {
         
         let asset = AVURLAsset(url: videoUrl, options: nil)
         
@@ -83,22 +98,27 @@ public class VideoKit {
             return
         }
         
-        let videoSettings:[String:Any] = [
-            AVVideoCompressionPropertiesKey: [AVVideoAverageBitRateKey: bitrate],
+        let videoSettings: [String: Any] = [
+            AVVideoCompressionPropertiesKey: [
+                AVVideoAverageBitRateKey: bitrate
+            ],
             AVVideoCodecKey: AVVideoCodecType.h264,
             AVVideoHeightKey: videoTrack.naturalSize.height,
             AVVideoWidthKey: videoTrack.naturalSize.width,
-            AVVideoScalingModeKey: AVVideoScalingModeResizeAspectFill
+            AVVideoScalingModeKey: AVVideoScalingModeResizeAspectFill,
+            AVVideoExpectedSourceFrameRateKey: config.limitFPS ?? 30
         ]
         
-        let audioSettings: [String:Any] = [AVFormatIDKey : kAudioFormatMPEG4AAC,
-                                   AVNumberOfChannelsKey : 2,
-                                         AVSampleRateKey : 44100.0,
-                                      AVEncoderBitRateKey: 128000
+        let audioSettings: [String: Any] = [
+            AVFormatIDKey : kAudioFormatMPEG4AAC,
+            AVNumberOfChannelsKey : 2,
+            AVSampleRateKey : 44100.0,
+            AVEncoderBitRateKey: 128000
         ]
         
         let audioInput = AVAssetWriterInput(mediaType: AVMediaType.audio, outputSettings: audioSettings)
         let videoInput = AVAssetWriterInput(mediaType: AVMediaType.video, outputSettings: videoSettings)
+        
         videoInput.transform = videoTrack.preferredTransform
         
         let videoInputQueue = DispatchQueue(label: "videoQueue")
@@ -127,7 +147,7 @@ public class VideoKit {
         
         let closeWriter: () -> Void = {
             if audioFinished && videoFinished {
-                self.assetWriter.finishWriting {
+                self.assetWriter?.finishWriting {
                     if let assetWriter = self.assetWriter {
                         do {
                             let data = try Data(contentsOf: assetWriter.outputURL)
@@ -177,31 +197,7 @@ public class VideoKit {
         }
     }
     
-    public static func mutate(videoUrl: URL, config: Config = Config(), callback: @escaping ( _ result: Result ) -> ()) {
-        
-        let asset = AVURLAsset(url: videoUrl, options: nil)
-        
-        guard let videoTrack = asset.tracks(withMediaType: .video).first else {
-            return callback(.error("ERROR INIT ASSET TRACK"))
-        }
-        
-        let bitrate = config.limitBitrate != nil ? videoTrack.estimatedDataRate > Float(config.limitBitrate!) ? Int(config.limitBitrate!) : Int(videoTrack.estimatedDataRate) : Int(videoTrack.estimatedDataRate)
-        
-        let instance = VideoKit()
-        
-        furtherMutate(videoUrl: videoUrl, config: config) { result in
-            switch result {
-            case .success(let newVideoUrl):
-                instance.compress(newVideoUrl, bitrate: bitrate) { newUrl in
-                    callback(.success(newUrl))
-                }
-            case .error(let errorString):
-                callback(.error(errorString))
-            }
-        }
-    }
-    
-    private static func furtherMutate(videoUrl: URL, config: Config = Config(), callback: @escaping ( _ result: Result ) -> ()) {
+    private static func exportWithConfiguration(videoUrl: URL, config: Config = Config(), callback: @escaping ( _ result: Result ) -> ()) {
         let asset = AVURLAsset(url: videoUrl, options: nil)
         
         guard let videoTrack = asset.tracks(withMediaType: .video).first else {
@@ -294,11 +290,11 @@ public class VideoKit {
                 exporter.timeRange = timeRange
             }
             
-            exporter.exportAsynchronously( completionHandler: { () -> Void in
+            exporter.exportAsynchronously {
                 DispatchQueue.main.async {
                     callback(.success(outputVideoUrl))
                 }
-            })
+            }
         }else {
             callback(.error("EXPORTER INIT FAIL"))
         }
