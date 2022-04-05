@@ -277,7 +277,7 @@ public class VideoKit {
         videoComposition.instructions = [instruction]
         
         let outputVideoUrl = URL(fileURLWithPath: getOutputPath(UUID().uuidString))
-        let exporter = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetPassthrough)
+        let exporter = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetHighestQuality)
         
         if let exporter = exporter {
             exporter.videoComposition = videoComposition
