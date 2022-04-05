@@ -32,9 +32,7 @@ public class VideoKit {
         
     }
     
-    private func compress(_ videoUrl: URL, bitrate: Int, completion: @escaping (URL)->Void) {
-        
-        let asset = AVURLAsset(url: videoUrl, options: nil)
+    private func compress(_ asset: AVAsset, bitrate: Int, completion: @escaping (URL)->Void) {
         
         var audioFinished = false
         var videoFinished = false
@@ -195,15 +193,8 @@ public class VideoKit {
         
         let instance = VideoKit()
         
-        cop(videoUrl: videoUrl, config: config) { result in
-            switch result {
-            case .success(let newVideoUrl):
-                instance.compress(newVideoUrl, bitrate: bitrate) { newUrl in
-                    callback(.success(newUrl))
-                }
-            case .error(let errorString):
-                callback(.error(errorString))
-            }
+        instance.compress(asset, bitrate: bitrate) { newUrl in
+            cop(videoUrl: newUrl, config: config, callback: callback)
         }
     }
     
