@@ -150,7 +150,6 @@ func compress(videoToCompress: URL, destinationPath: URL, size: CompressionSize?
         let videoOutputSettings: Dictionary<String, Any> = [
             AVVideoWidthKey : size == nil ? videoTrack.naturalSize.width : size!.width,
             AVVideoHeightKey : size == nil ? videoTrack.naturalSize.height : size!.height,
-            AVVideoCodecKey : AVVideoCodecType.h264,
             AVVideoCompressionPropertiesKey : videoCompressionProps
         ]
         let videoInput = AVAssetWriterInput(mediaType: AVMediaType.video, outputSettings: videoOutputSettings)
