@@ -122,8 +122,8 @@ public class VideoKit {
         reader.startReading()
         writer.startSession(atSourceTime: CMTime.zero)
         
-        let closeWriter:()->Void = {
-            if (audioFinished && videoFinished) {
+        let closeWriter: () -> Void = {
+            if audioFinished && videoFinished {
                 self.assetWriter?.finishWriting(completionHandler: { [weak self] in
                     
                     if let assetWriter = self?.assetWriter {
@@ -268,7 +268,7 @@ public class VideoKit {
         videoComposition.instructions = [instruction]
         
         let outputVideoUrl = URL(fileURLWithPath: getOutputPath(UUID().uuidString))
-        let exporter = AVAssetExportSession(asset: asset, presetName: config.quality.get())
+        let exporter = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetPassthrough)
         
         if let exporter = exporter {
             exporter.videoComposition = videoComposition
