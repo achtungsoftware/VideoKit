@@ -20,8 +20,185 @@ import AVKit
 
 public class VideoKit {
     
+    var assetWriter: AVAssetWriter!
+    var assetWriterVideoInput: AVAssetWriterInput!
+    var audioMicInput: AVAssetWriterInput!
+    var videoURL: URL!
+    var audioAppInput: AVAssetWriterInput!
+    var channelLayout = AudioChannelLayout()
+    var assetReader: AVAssetReader?
+    
+    private func compress(_ urlToCompress: URL, bitrate: Int, completion: @escaping (URL)->Void) {
+        
+        var audioFinished = false
+        var videoFinished = false
+        
+        let asset = AVAsset(url: urlToCompress)
+        
+        do {
+            assetReader = try AVAssetReader(asset: asset)
+        } catch {
+            assetReader = nil
+        }
+        
+        guard let reader = assetReader else {
+            print("Could not iniitalize asset reader probably failed its try catch")
+            // show user error message/alert
+            return
+        }
+        
+        guard let videoTrack = asset.tracks(withMediaType: AVMediaType.video).first else { return }
+        let videoReaderSettings: [String:Any] = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32ARGB]
+        
+        let assetReaderVideoOutput = AVAssetReaderTrackOutput(track: videoTrack, outputSettings: videoReaderSettings)
+        
+        var assetReaderAudioOutput: AVAssetReaderTrackOutput?
+        if let audioTrack = asset.tracks(withMediaType: AVMediaType.audio).first {
+            
+            let audioReaderSettings: [String : Any] = [
+                AVFormatIDKey: kAudioFormatLinearPCM,
+                AVSampleRateKey: 44100,
+                AVNumberOfChannelsKey: 2
+            ]
+            
+            assetReaderAudioOutput = AVAssetReaderTrackOutput(track: audioTrack, outputSettings: audioReaderSettings)
+            
+            if reader.canAdd(assetReaderAudioOutput!) {
+                reader.add(assetReaderAudioOutput!)
+            } else {
+                print("Couldn't add audio output reader")
+                // show user error message/alert
+                return
+            }
+        }
+        
+        if reader.canAdd(assetReaderVideoOutput) {
+            reader.add(assetReaderVideoOutput)
+        } else {
+            print("Couldn't add video output reader")
+            // show user error message/alert
+            return
+        }
+        
+        let videoSettings:[String:Any] = [
+            AVVideoCompressionPropertiesKey: [AVVideoAverageBitRateKey: bitrate],
+            AVVideoCodecKey: AVVideoCodecType.h264,
+            AVVideoHeightKey: videoTrack.naturalSize.height,
+            AVVideoWidthKey: videoTrack.naturalSize.width,
+            AVVideoScalingModeKey: AVVideoScalingModeResizeAspectFill
+        ]
+        
+        let audioSettings: [String:Any] = [AVFormatIDKey : kAudioFormatMPEG4AAC,
+                                   AVNumberOfChannelsKey : 2,
+                                         AVSampleRateKey : 44100.0,
+                                      AVEncoderBitRateKey: 128000
+        ]
+        
+        let audioInput = AVAssetWriterInput(mediaType: AVMediaType.audio, outputSettings: audioSettings)
+        let videoInput = AVAssetWriterInput(mediaType: AVMediaType.video, outputSettings: videoSettings)
+        videoInput.transform = videoTrack.preferredTransform
+        
+        let videoInputQueue = DispatchQueue(label: "videoQueue")
+        let audioInputQueue = DispatchQueue(label: "audioQueue")
+        
+        do {
+            assetWriter = try AVAssetWriter(outputURL: URL(fileURLWithPath: VideoKit.getOutputPath(UUID().uuidString)), fileType: AVFileType.mp4)
+            
+        } catch {
+            assetWriter = nil
+        }
+        
+        guard let writer = assetWriter else {
+            print("assetWriter was nil")
+            // show user error message/alert
+            return
+        }
+        
+        writer.shouldOptimizeForNetworkUse = true
+        writer.add(videoInput)
+        writer.add(audioInput)
+        
+        writer.startWriting()
+        reader.startReading()
+        writer.startSession(atSourceTime: CMTime.zero)
+        
+        let closeWriter:()->Void = {
+            if (audioFinished && videoFinished) {
+                self.assetWriter?.finishWriting(completionHandler: { [weak self] in
+                    
+                    if let assetWriter = self?.assetWriter {
+                        do {
+                            let data = try Data(contentsOf: assetWriter.outputURL)
+                            print("compressFile -file size after compression: \(Double(data.count / 1048576)) mb")
+                        } catch let err as NSError {
+                            print("compressFile Error: \(err.localizedDescription)")
+                        }
+                    }
+                    
+                    if let safeSelf = self, let assetWriter = safeSelf.assetWriter {
+                        completion(assetWriter.outputURL)
+                    }
+                })
+                
+                self.assetReader?.cancelReading()
+            }
+        }
+        
+        audioInput.requestMediaDataWhenReady(on: audioInputQueue) {
+            while(audioInput.isReadyForMoreMediaData) {
+                if let cmSampleBuffer = assetReaderAudioOutput?.copyNextSampleBuffer() {
+                    
+                    audioInput.append(cmSampleBuffer)
+                    
+                } else {
+                    audioInput.markAsFinished()
+                    DispatchQueue.main.async {
+                        audioFinished = true
+                        closeWriter()
+                    }
+                    break
+                }
+            }
+        }
+        
+        videoInput.requestMediaDataWhenReady(on: videoInputQueue) {
+            // request data here
+            while(videoInput.isReadyForMoreMediaData) {
+                if let cmSampleBuffer = assetReaderVideoOutput.copyNextSampleBuffer() {
+                    
+                    videoInput.append(cmSampleBuffer)
+                    
+                } else {
+                    videoInput.markAsFinished()
+                    DispatchQueue.main.async {
+                        videoFinished = true
+                        closeWriter()
+                    }
+                    break
+                }
+            }
+        }
+    }
+    
     public static func mutate(videoUrl: URL, config: Config = Config(), callback: @escaping ( _ result: Result ) -> ()) {
         
+        let asset = AVURLAsset(url: videoUrl, options: nil)
+        
+        guard let videoTrack = asset.tracks(withMediaType: .video).first else {
+            return callback(.error("ERROR INIT ASSET TRACK"))
+        }
+        
+        if let limitBitrate = config.limitBitrate, videoTrack.estimatedDataRate > Float(limitBitrate) {
+            let instance = VideoKit()
+            instance.compress(videoUrl, bitrate: limitBitrate) { newUrl in
+                cop(videoUrl: newUrl, config: config, callback: callback)
+            }
+        }else {
+            cop(videoUrl: videoUrl, config: config, callback: callback)
+        }
+    }
+    
+    private static func cop(videoUrl: URL, config: Config = Config(), callback: @escaping ( _ result: Result ) -> ()) {
         let asset = AVURLAsset(url: videoUrl, options: nil)
         
         guard let videoTrack = asset.tracks(withMediaType: .video).first else {
