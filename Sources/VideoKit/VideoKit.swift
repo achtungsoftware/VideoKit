@@ -188,11 +188,14 @@ public class VideoKit {
             return callback(.error("ERROR INIT ASSET TRACK"))
         }
         
-        if let limitBitrate = config.limitBitrate {
-            let instance = VideoKit()
-            instance.compress(videoUrl, bitrate: videoTrack.estimatedDataRate > Float(limitBitrate) ? Int(limitBitrate) : Int(videoTrack.estimatedDataRate)) { newUrl in
-                cop(videoUrl: newUrl, config: config, callback: callback)
-            }
+        let bitrate = config.limitBitrate != nil ? videoTrack.estimatedDataRate > Float(config.limitBitrate!) ? Int(config.limitBitrate!) : Int(videoTrack.estimatedDataRate) : Int(videoTrack.estimatedDataRate)
+        
+        print(bitrate)
+        
+        let instance = VideoKit()
+        
+        instance.compress(videoUrl, bitrate: bitrate) { newUrl in
+            cop(videoUrl: newUrl, config: config, callback: callback)
         }
     }
     
