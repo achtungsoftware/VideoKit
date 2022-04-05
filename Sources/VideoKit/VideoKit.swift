@@ -28,12 +28,10 @@ public class VideoKit {
     var channelLayout = AudioChannelLayout()
     var assetReader: AVAssetReader?
     
-    private func compress(_ urlToCompress: URL, bitrate: Int, completion: @escaping (URL)->Void) {
+    private func compress(_ asset: AVAsset, bitrate: Int, completion: @escaping (URL)->Void) {
         
         var audioFinished = false
         var videoFinished = false
-        
-        let asset = AVAsset(url: urlToCompress)
         
         do {
             assetReader = try AVAssetReader(asset: asset)
@@ -102,7 +100,15 @@ public class VideoKit {
         let audioInputQueue = DispatchQueue(label: "audioQueue")
         
         do {
-            assetWriter = try AVAssetWriter(outputURL: URL(fileURLWithPath: VideoKit.getOutputPath(UUID().uuidString)), fileType: AVFileType.mp4)
+            
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'Z'"
+            let date = Date()
+            let tempDir = NSTemporaryDirectory()
+            let outputPath = "\(tempDir)/\(formatter.string(from: date)).mp4"
+            let outputURL = URL(fileURLWithPath: outputPath)
+            
+            assetWriter = try AVAssetWriter(outputURL: outputURL, fileType: AVFileType.mp4)
             
         } catch {
             assetWriter = nil
@@ -194,7 +200,7 @@ public class VideoKit {
         
         let instance = VideoKit()
         
-        instance.compress(videoUrl, bitrate: bitrate) { newUrl in
+        instance.compress(asset, bitrate: bitrate) { newUrl in
             cop(videoUrl: newUrl, config: config, callback: callback)
         }
     }
