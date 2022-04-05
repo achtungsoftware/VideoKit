@@ -118,7 +118,7 @@ public class VideoKit {
         instruction.layerInstructions = [transformer]
         videoComposition.instructions = [instruction]
         
-        let outputVideoUrl = URL(fileURLWithPath: getOutputPath(UUID().uuidString))
+        let outputVideoUrl = outputURL()
         let exporter = AVAssetExportSession(asset: asset, presetName: config.quality.value)
         
         if let exporter = exporter {
@@ -152,10 +152,10 @@ public class VideoKit {
         }
     }
     
-    public static func getOutputPath(_ name: String) -> String {
-        let documentPath = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true )[0] as NSString
-        let outputPath = "\(documentPath)/\(name).mp4"
-        return outputPath
+    public static func outputURL() -> URL {
+        let documentsPath = NSTemporaryDirectory()
+        let outputPath = "\(documentsPath)/\(UUID().uuidString).mp4"
+        return URL(fileURLWithPath: outputPath)
     }
     
     /// Converts degrees to radians

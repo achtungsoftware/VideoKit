@@ -98,7 +98,7 @@ internal class Compressor {
         let audioInputQueue = DispatchQueue(label: "audioQueue")
         
         do {
-            assetWriter = try AVAssetWriter(outputURL: URL(fileURLWithPath: VideoKit.getOutputPath(UUID().uuidString)), fileType: AVFileType.mp4)
+            assetWriter = try AVAssetWriter(outputURL: VideoKit.outputURL(), fileType: AVFileType.mp4)
             
         } catch {
             assetWriter = nil
