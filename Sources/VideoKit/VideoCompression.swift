@@ -55,13 +55,11 @@ enum CompressionTransform {
 // Compression Encode Parameters
 struct CompressionConfig {
     let videoBitrate: Int
-    let avVideoProfileLevel: String
     let audioSampleRate: Int
     let audioBitrate: Int
     
     static let defaultConfig = CompressionConfig(
         videoBitrate: 1024 * 750,
-        avVideoProfileLevel: AVVideoProfileLevelH264High41,
         audioSampleRate: 22050,
         audioBitrate: 80000
     )
@@ -147,7 +145,6 @@ func compress(videoToCompress: URL, destinationPath: URL, size: CompressionSize?
         // Video Output Configuration
         let videoCompressionProps: Dictionary<String, Any> = [
             AVVideoAverageBitRateKey: compressionConfig.videoBitrate,
-            AVVideoProfileLevelKey: compressionConfig.avVideoProfileLevel
         ]
         
         let videoOutputSettings: Dictionary<String, Any> = [
