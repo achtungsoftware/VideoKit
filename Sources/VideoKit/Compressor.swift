@@ -1,4 +1,4 @@
-//  Copyright © 2021 - present Julian Gerhards
+//  Copyright © 2022 - present Julian Gerhards
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,10 +19,11 @@ import Foundation
 import AVKit
 
 internal class Compressor {
+    
     var assetWriter: AVAssetWriter?
     var assetReader: AVAssetReader?
     
-    func compress(_ videoUrl: URL, bitrate: Int, config: VideoKit.Config, completion: @escaping (URL) -> Void) {
+    func compress(_ videoUrl: URL, bitrate: Int, config: VideoKit.Config, callback: @escaping (VideoKit.Result) -> Void) {
         
         let asset = AVURLAsset(url: videoUrl, options: nil)
         
@@ -36,8 +37,7 @@ internal class Compressor {
         }
         
         guard let reader = assetReader else {
-            print("Could not iniitalize asset reader probably failed its try catch")
-            // show user error message/alert
+            callback(.error("COULD NOT INIT ASSETREADER"))
             return
         }
         
@@ -60,8 +60,7 @@ internal class Compressor {
             if reader.canAdd(assetReaderAudioOutput!) {
                 reader.add(assetReaderAudioOutput!)
             } else {
-                print("Couldn't add audio output reader")
-                // show user error message/alert
+                callback(.error("COULD NOT ADD AUDIO OUTPUT READER"))
                 return
             }
         }
@@ -69,8 +68,7 @@ internal class Compressor {
         if reader.canAdd(assetReaderVideoOutput) {
             reader.add(assetReaderVideoOutput)
         } else {
-            print("Couldn't add video output reader")
-            // show user error message/alert
+            callback(.error("COULD NOT ADD VIDEO OUTPUT READER"))
             return
         }
         
@@ -107,8 +105,7 @@ internal class Compressor {
         }
         
         guard let writer = assetWriter else {
-            print("assetWriter was nil")
-            // show user error message/alert
+            callback(.error("ASSETWRITER WAS NIL"))
             return
         }
         
@@ -124,14 +121,7 @@ internal class Compressor {
             if audioFinished && videoFinished {
                 self.assetWriter?.finishWriting {
                     if let assetWriter = self.assetWriter {
-                        do {
-                            let data = try Data(contentsOf: assetWriter.outputURL)
-                            print("compressFile -file size after compression: \(Double(data.count / 1048576)) mb")
-                        } catch let err as NSError {
-                            print("compressFile Error: \(err.localizedDescription)")
-                        }
-                        
-                        completion(assetWriter.outputURL)
+                        callback(.success(assetWriter.outputURL))
                     }
                 }
                 

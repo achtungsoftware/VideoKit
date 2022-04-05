@@ -1,4 +1,4 @@
-//  Copyright © 2021 - present Julian Gerhards
+//  Copyright © 2022 - present Julian Gerhards
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -35,11 +35,11 @@ public class VideoKit {
         exportWithConfiguration(videoUrl: videoUrl, config: config) { result in
             switch result {
             case .success(let newVideoUrl):
-                compressor.compress(newVideoUrl, bitrate: bitrate, config: config) { newUrl in
-                    callback(.success(newUrl))
+                compressor.compress(newVideoUrl, bitrate: bitrate, config: config) { compressResult in
+                    callback(compressResult)
                 }
-            case .error(let errorString):
-                callback(.error(errorString))
+            case .error:
+                callback(result)
             }
         }
     }
@@ -114,7 +114,7 @@ public class VideoKit {
         videoComposition.instructions = [instruction]
         
         let outputVideoUrl = URL(fileURLWithPath: getOutputPath(UUID().uuidString))
-        let exporter = AVAssetExportSession(asset: asset, presetName: config.quality.get())
+        let exporter = AVAssetExportSession(asset: asset, presetName: config.quality.value)
         
         if let exporter = exporter {
             exporter.videoComposition = videoComposition
@@ -201,8 +201,9 @@ public extension VideoKit {
         case presetLowQuality
         case presetMediumQuality
         case presetHighestQuality
+        case presetPassthrough
         
-        func get() -> String {
+        var value: String {
             switch self {
             case .preset640x480:
                 return AVAssetExportPreset640x480
@@ -222,6 +223,8 @@ public extension VideoKit {
                 return AVAssetExportPresetMediumQuality
             case .presetHighestQuality:
                 return AVAssetExportPresetHighestQuality
+            case .presetPassthrough:
+                return AVAssetExportPresetPassthrough
             }
         }
     }
