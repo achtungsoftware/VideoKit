@@ -28,6 +28,31 @@ public class VideoKit {
             return callback(.error("ERROR INIT ASSET TRACK"))
         }
         
+        if let limitBitrate = config.limitBitrate, videoTrack.estimatedDataRate > Float(limitBitrate) {
+            let outputVideoUrl = URL(fileURLWithPath: getOutputPath(UUID().uuidString))
+            _ = compress(videoToCompress: videoUrl, destinationPath: outputVideoUrl, size: nil, compressionTransform: .keepSame, compressionConfig: .init(videoBitrate: limitBitrate, avVideoProfileLevel: AVVideoProfileLevelH264High41, audioSampleRate: 22050, audioBitrate: 80000),
+                         completionHandler: { path in
+                _procMutate(videoUrl: path, config: config, callback: callback)
+            },
+                         errorHandler: { e in
+                return callback(.error("UNKNOWN ERROR"))
+            },
+                         cancelHandler: {
+                return callback(.error("CANCEL"))
+            }
+            )
+        }else {
+            _procMutate(videoUrl: videoUrl, config: config, callback: callback)
+        }
+    }
+    
+    private static func _procMutate(videoUrl: URL, config: Config = Config(), callback: @escaping ( _ result: Result ) -> ()) {
+        let asset = AVURLAsset(url: videoUrl, options: nil)
+        
+        guard let videoTrack = asset.tracks(withMediaType: .video).first else {
+            return callback(.error("ERROR INIT ASSET TRACK"))
+        }
+        
         let trackOrientation = videoTrack.orientation()
         let transformer = AVMutableVideoCompositionLayerInstruction(assetTrack: videoTrack)
         let videoComposition = AVMutableVideoComposition()
