@@ -14,7 +14,6 @@
 //
 //  GitHub https://github.com/knoggl/VideoKit
 //
-
 import Foundation
 import AVKit
 
@@ -32,7 +31,9 @@ public class VideoKit {
         
     }
     
-    private func compress(_ asset: AVAsset, bitrate: Int, completion: @escaping (URL)->Void) {
+    private func compress(_ videoUrl: URL, bitrate: Int, completion: @escaping (URL)->Void) {
+        
+        let asset = AVURLAsset(url: videoUrl, options: nil)
         
         var audioFinished = false
         var videoFinished = false
@@ -161,12 +162,9 @@ public class VideoKit {
         }
         
         videoInput.requestMediaDataWhenReady(on: videoInputQueue) {
-            // request data here
             while(videoInput.isReadyForMoreMediaData) {
                 if let cmSampleBuffer = assetReaderVideoOutput.copyNextSampleBuffer() {
-                    
                     videoInput.append(cmSampleBuffer)
-                    
                 } else {
                     videoInput.markAsFinished()
                     DispatchQueue.main.async {
@@ -189,16 +187,21 @@ public class VideoKit {
         
         let bitrate = config.limitBitrate != nil ? videoTrack.estimatedDataRate > Float(config.limitBitrate!) ? Int(config.limitBitrate!) : Int(videoTrack.estimatedDataRate) : Int(videoTrack.estimatedDataRate)
         
-        print(bitrate)
-        
         let instance = VideoKit()
         
-        instance.compress(asset, bitrate: bitrate) { newUrl in
-            cop(videoUrl: newUrl, config: config, callback: callback)
+        furtherMutate(videoUrl: videoUrl, config: config) { result in
+            switch result {
+            case .success(let newVideoUrl):
+                instance.compress(newVideoUrl, bitrate: bitrate) { newUrl in
+                    callback(.success(newUrl))
+                }
+            case .error(let errorString):
+                callback(.error(errorString))
+            }
         }
     }
     
-    private static func cop(videoUrl: URL, config: Config = Config(), callback: @escaping ( _ result: Result ) -> ()) {
+    private static func furtherMutate(videoUrl: URL, config: Config = Config(), callback: @escaping ( _ result: Result ) -> ()) {
         let asset = AVURLAsset(url: videoUrl, options: nil)
         
         guard let videoTrack = asset.tracks(withMediaType: .video).first else {
