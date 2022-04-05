@@ -105,8 +105,7 @@ public class VideoKit {
             AVVideoCodecKey: AVVideoCodecType.h264,
             AVVideoHeightKey: videoTrack.naturalSize.height,
             AVVideoWidthKey: videoTrack.naturalSize.width,
-            AVVideoScalingModeKey: AVVideoScalingModeResizeAspectFill,
-            AVVideoExpectedSourceFrameRateKey: config.limitFPS ?? 30
+            AVVideoScalingModeKey: AVVideoScalingModeResizeAspectFill
         ]
         
         let audioSettings: [String: Any] = [
