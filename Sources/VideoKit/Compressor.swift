@@ -130,7 +130,7 @@ internal class Compressor {
         }
         
         audioInput.requestMediaDataWhenReady(on: audioInputQueue) {
-            while(audioInput.isReadyForMoreMediaData) {
+            while audioInput.isReadyForMoreMediaData {
                 if let cmSampleBuffer = assetReaderAudioOutput?.copyNextSampleBuffer() {
                     
                     audioInput.append(cmSampleBuffer)
@@ -147,7 +147,7 @@ internal class Compressor {
         }
         
         videoInput.requestMediaDataWhenReady(on: videoInputQueue) {
-            while(videoInput.isReadyForMoreMediaData) {
+            while videoInput.isReadyForMoreMediaData {
                 if let cmSampleBuffer = assetReaderVideoOutput.copyNextSampleBuffer() {
                     videoInput.append(cmSampleBuffer)
                 } else {

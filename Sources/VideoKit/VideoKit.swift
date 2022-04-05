@@ -20,6 +20,11 @@ import AVKit
 
 public class VideoKit {
     
+    /// This function crops, trims, resizes, and compresses a given video
+    /// - Parameters:
+    ///   - videoUrl: The `Url` of the video
+    ///   - config: The `VideoKit.Config` configuration
+    ///   - callback: Returns a `VideoKit.Result`
     public static func mutate(videoUrl: URL, config: Config = Config(), callback: @escaping ( _ result: Result ) -> ()) {
         
         let asset = AVURLAsset(url: videoUrl, options: nil)
