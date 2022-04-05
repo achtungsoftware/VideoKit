@@ -188,13 +188,11 @@ public class VideoKit {
             return callback(.error("ERROR INIT ASSET TRACK"))
         }
         
-        if let limitBitrate = config.limitBitrate, videoTrack.estimatedDataRate > Float(limitBitrate) {
+        if let limitBitrate = config.limitBitrate {
             let instance = VideoKit()
-            instance.compress(videoUrl, bitrate: limitBitrate) { newUrl in
+            instance.compress(videoUrl, bitrate: videoTrack.estimatedDataRate > Float(limitBitrate) ? Int(limitBitrate) : Int(videoTrack.estimatedDataRate)) { newUrl in
                 cop(videoUrl: newUrl, config: config, callback: callback)
             }
-        }else {
-            cop(videoUrl: videoUrl, config: config, callback: callback)
         }
     }
     
@@ -317,18 +315,15 @@ public class VideoKit {
 
 public extension VideoKit {
     struct Config {
-        var quality: Quality
         var limitLength: Double?
         var cropRect: CGRect?
         var limitFPS: Int32?
         var limitBitrate: Int?
         
-        public init(_ quality: Quality = .preset1920x1080,
-                    limitLength: Double? = nil,
+        public init(limitLength: Double? = nil,
                     cropRect: CGRect? = nil,
                     limitFPS: Int32? = nil,
                     limitBitrate: Int? = nil) {
-            self.quality = quality
             self.limitLength = limitLength
             self.cropRect = cropRect
             self.limitFPS = limitFPS
@@ -343,40 +338,5 @@ public extension VideoKit {
     enum Result {
         case success(_ videoUrl: URL)
         case error(_ errorString: String)
-    }
-    
-    enum Quality {
-        case preset640x480
-        case preset960x540
-        case preset1280x720
-        case preset1920x1080
-        case preset3840x2160
-        case presetHEVC1920x1080
-        case presetLowQuality
-        case presetMediumQuality
-        case presetHighestQuality
-        
-        func get() -> String {
-            switch self {
-            case .preset640x480:
-                return AVAssetExportPreset640x480
-            case .preset960x540:
-                return AVAssetExportPreset960x540
-            case .preset1280x720:
-                return AVAssetExportPreset1280x720
-            case .preset1920x1080:
-                return AVAssetExportPreset1920x1080
-            case .preset3840x2160:
-                return AVAssetExportPreset3840x2160
-            case .presetHEVC1920x1080:
-                return AVAssetExportPresetHEVC1920x1080
-            case .presetLowQuality:
-                return AVAssetExportPresetLowQuality
-            case .presetMediumQuality:
-                return AVAssetExportPresetMediumQuality
-            case .presetHighestQuality:
-                return AVAssetExportPresetHighestQuality
-            }
-        }
     }
 }
