@@ -237,12 +237,13 @@ public extension VideoKit {
 
 extension VideoKit {
     
+
+    @available(iOS 13.0.0, *)
     /// This function crops, trims, resizes, and compresses a given video
     /// - Parameters:
     ///   - videoUrl: The `Url` of the video
     ///   - config: The `VideoKit.Config` configuration
-    ///   - callback: Returns a `VideoKit.Result`
-    @available(iOS 13.0.0, *)
+    /// - Returns: The `VideoKit.Result`
     public static func mutate(videoUrl: URL, config: Config = Config()) async -> Result {
         
         let asset = AVURLAsset(url: videoUrl, options: nil)
