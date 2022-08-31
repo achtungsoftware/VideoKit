@@ -234,3 +234,38 @@ public extension VideoKit {
         }
     }
 }
+
+extension VideoKit {
+    
+    /// This function crops, trims, resizes, and compresses a given video
+    /// - Parameters:
+    ///   - videoUrl: The `Url` of the video
+    ///   - config: The `VideoKit.Config` configuration
+    ///   - callback: Returns a `VideoKit.Result`
+    @available(iOS 13.0.0, *)
+    public static func mutate(videoUrl: URL, config: Config = Config()) async -> Result {
+        
+        let asset = AVURLAsset(url: videoUrl, options: nil)
+        
+        guard let videoTrack = asset.tracks(withMediaType: .video).first else {
+            return .error("ERROR INIT ASSET TRACK")
+        }
+        
+        let bitrate = config.limitBitrate != nil ? videoTrack.estimatedDataRate > Float(config.limitBitrate!) ? Int(config.limitBitrate!) : Int(videoTrack.estimatedDataRate) : Int(videoTrack.estimatedDataRate)
+        
+        let compressor = Compressor()
+        
+        return await withCheckedContinuation { continuation in
+            exportWithConfiguration(videoUrl: videoUrl, config: config) { result in
+                switch result {
+                case .success(let newVideoUrl):
+                    compressor.compress(newVideoUrl, bitrate: bitrate, config: config) { compressResult in
+                        continuation.resume(returning: compressResult)
+                    }
+                case .error:
+                    continuation.resume(returning: result)
+                }
+            }
+        }
+    }
+}

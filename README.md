@@ -9,15 +9,26 @@ How it works
 let config = VideoKit.Config(.preset1920x1080, limitLength: 180, limitFPS: 30, limitBitrate: 2_500_000)
 
 VideoKit.mutate(videoUrl: YOUR_VIDEO_URL, config: config) { result in
-  switch result {
+    switch result {
+        case .success(let videoUrl):
+            // DO SOMETHING WITH YOUR VIDEO
+            break
+        case .error(let errorString):
+            print(errorString)
+    }
+}
+
+// You can also crop videos with
+let config = VideoKit.Config(.preset1920x1080, cropRect: CGRect(x: 0, y: 0, width: 100, height: 100))
+
+// Async await
+let result = await VideoKit.mutate(videoUrl: YOUR_VIDEO_URL, config: config)
+
+switch result {
     case .success(let videoUrl):
       // DO SOMETHING WITH YOUR VIDEO
       break
     case .error(let errorString):
       print(errorString)
-  }
 }
-
-// You can also crop videos with
-let config = VideoKit.Config(.preset1920x1080, cropRect: CGRect(x: 0, y: 0, width: 100, height: 100))
 ```
