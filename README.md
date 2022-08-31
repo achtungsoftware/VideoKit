@@ -1,3 +1,7 @@
+[![Swift](https://img.shields.io/badge/Swift-5.6-brightgreen.svg?colorA=orange&colorB=4F4F4F)](https://swift.org)
+[![iOS](https://img.shields.io/badge/iOS-11-brightgreen.svg?colorA=orange&colorB=4F4F4F)](https://www.apple.com/ios)
+[![Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-brightgreen.svg?colorA=orange&colorB=4F4F4F)](https://www.apache.org/licenses/LICENSE-2.0)
+
 # VideoKit
 
 VideoKit is a high level layer on top of AVKit. It lets you compress, resize, crop and limit the length of videos.
